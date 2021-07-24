@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="initial-scale=1.0">
+<title>Picker</title>
+<style>
+body {
+    background:#FFF;
+    color:#000;
+    font-family:verdana, sans-serif;
+    font-size:10pt;
+    margin:0;
+    padding:10px;
+}
+
+a:link, a:visited {
+    color:#008;
+    font-weight:bold;
+    text-decoration:none;
+}
+
+a:active, a:hover {
+    color:#ACF;
+}
+
+.info {
+    font-weight:bold;
+}
+
+button {
+    font-family:inherit;
+    cursor:pointer;
+    border:0;
+    border-radius:3px;
+    padding:0.3em 0.5em;
+    background:#CCC;
+    color:#000;
+}
+
+button:hover {
+    background:#DDD;
+}
+
+button.disabled {
+    background:#DDD;
+    color:#888;
+    cursor:not-allowed;
+}
+
+button.disabled:hover {
+    background:#DDD;
+}
+
+#container {
+    position:relative;
+    margin-left:-10px;
+    margin-right:-10px;
+    padding:10px;
+    overflow:hidden;
+}
+
+@media (min-width:1024px) {
+    /* Put the found favorites beside the picking div when the window is sufficiently large */
+    #picking {
+        float:left;
+        width:636px;
+    }
+
+    #secondary {
+        margin-left:646px;
+    }
+}
+
+@media (min-width:1300px) {
+    /* Once we get to the point where 636px is less than half of the width of the screen, make the picking div just take up half */
+    #picking {
+        width:50%;
+    }
+
+    #secondary {
+        margin-left:51%;
+    }
+}
+
+#pick {
+    background:#58F;
+    color:#FFF;
+    font-size:larger;
+    font-weight:bold;
+    width:6em;
+    border-radius:5px;
+    margin-right:10px;
+}
+
+#pick.disabled {
+    background:#ACF;
+}
+
+#pick:hover {
+    background:#ACF;
+}
+
+.item-list {
+    padding:0;
+    list-style-type:none;
+    line-height:100px;
+}
+
+.item-list li {
+    margin:0;
+    display:inline-block;
+    height:100px;
+    width:100px;
+    line-height:100px;
+    border:3px solid transparent;
+    text-align:center;
+    position:relative;
+    vertical-align:top;
+    overflow:hidden;
+    border-radius:100%;
+    background:#F7F7F7;
+    color:#000;
+}
+
+.item-list li img {
+    vertical-align:middle;
+    max-height:100%;
+    max-width:100%;
+}
+
+.item-list li span {
+    display:inline-block;
+    vertical-align:middle;
+    line-height:1.2;
+}
+
+@media (max-width:636px) {
+    .item-list {
+        line-height:75px;
+    }
+
+    .item-list li {
+        line-height:75px;
+        height:75px;
+        width:75px;
+    }
+}
+
+@media (max-width:423px) {
+    .item-list {
+        line-height:50px;
+    }
+
+    .item-list li {
+        line-height:50px;
+        height:50px;
+        width:50px;
+    }
+}
+
+#evaluating li {
+    cursor:pointer;
+}
+
+#favorites li {
+    cursor:move;
+}
+
+.item-list li:hover {
+    background:#CDF;
+}
+
+.item-list.sorting li:hover {
+    background:#F7F7F7;
+}
+
+#evaluating li.selected {
+    border:3px solid #7AC;
+}
+
+#evaluating, #buttons {
+    text-align:center;
+    margin:auto;
+}
+
+#evaluating li.notice {
+    width:auto;
+    height:auto;
+    max-width:260px;
+    margin:auto;
+    background:#F7F7F7;
+    border-radius:10px;
+    padding:30px 30px;
+    color:#000;
+    text-align:center;
+    line-height:1.4;
+    cursor:auto;
+    font-size:10pt;
+}
+
+#buttons {
+    margin-top:30px;
+    position:relative;
+    z-index:3;
+}
+</style>
+</head>
+<body>
+<h1>Picker</h1>
+
+<p>You can include any content you want here.</p>
+
+<div id="container">
+
+<div id="picking">
+<ul id="evaluating" class="item-list">
+</ul>
+
+<p id="buttons"><button id="pick">Pick</button> <button id="pass">Pass</button> <button id="undo">Undo</button> <button id="redo">Redo</button></p>
+</div>
+
+<div id="secondary">
+<h2>Found favorites</h2>
+
+<ol id="favorites" class="item-list">
+</ol>
+</div>
+</div>
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+<script src="picker.js"></script>
+<script src="picker-ui.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+<script>
+'use strict';
+
+var items = [
+    {id: 'YOU', image: 'https://cdn.discordapp.com/emojis/853837317071175710.png?v=1'},
+    {id: 'yoda', image: 'https://cdn.discordapp.com/emojis/339869646175862784.png?v=1'},
+    {id: 'wyhello', image: 'https://cdn.discordapp.com/emojis/505778354151227414.png?v=1'},
+    {id: 'waitaminute', image: 'https://cdn.discordapp.com/emojis/380491327642533890.png?v=1'},
+    {id: 'transknife', image: 'https://cdn.discordapp.com/emojis/700412476377792662.png?v=1'},
+    {id: 'toddskeleton', image: 'https://cdn.discordapp.com/emojis/853838162148720690.png?v=1'},
+    {id: 'toddcoward', image: 'https://cdn.discordapp.com/emojis/853838544523362324.png?v=1'},
+    {id: 'ThumbsUpSmile', image: 'https://cdn.discordapp.com/emojis/327673063703576586.png?v=1'},
+    {id: 'thumbsdownfrown', image: 'https://cdn.discordapp.com/emojis/522674381978206209.png?v=1'},
+    {id: 'tetris4jeff', image: 'https://cdn.discordapp.com/emojis/558740439298080778.png?v=1'},
+    {id: 'shakyeyes', image: 'https://cdn.discordapp.com/emojis/501187866127368203.png?v=1'},
+    {id: 'sadcat', image: 'https://cdn.discordapp.com/emojis/538532797892263975.png?v=1'},
+    {id: 'rue', image: 'https://cdn.discordapp.com/emojis/327682753787068417.png?v=1'},
+    {id: 'rhythmpogfect', image: 'https://cdn.discordapp.com/emojis/783038883067068457.png?v=1'},
+    {id: 'priderat', image: 'https://cdn.discordapp.com/emojis/853835832837537802.png?v=1'},
+    {id: 'pikasmile', image: 'https://cdn.discordapp.com/emojis/585901382607831283.png?v=1'},
+    {id: 'pathetic', image: 'https://cdn.discordapp.com/emojis/440140046704705536.png?v=1'},
+    {id: 'ohno', image: 'https://cdn.discordapp.com/emojis/853835742781898752.png?v=1'},
+    {id: 'oh_no', image: 'https://cdn.discordapp.com/emojis/868388075108188192.png?v=1'},
+    {id: 'NONONO', image: 'https://cdn.discordapp.com/emojis/858429613410484284.png?v=1'},
+    {id: 'nikosmug', image: 'https://cdn.discordapp.com/emojis/369586826958209024.png?v=1'},
+    {id: 'niko_surprised', image: 'https://cdn.discordapp.com/emojis/327672993738260481.png?v=1'},
+    {id: 'niko_sad', image: 'https://cdn.discordapp.com/emojis/327913359435366401.png?v=1'},
+    {id: 'niko_pancakes', image: 'https://cdn.discordapp.com/emojis/327672976457859073.png?v=1'},
+    {id: 'niko_gasmask', image: 'https://cdn.discordapp.com/emojis/335485996286083073.png?v=1'},
+    {id: 'niko_cry', image: 'https://cdn.discordapp.com/emojis/338535877624201217.png?v=1'},
+    {id: 'niko_83c', image: 'https://cdn.discordapp.com/emojis/327659997137862656.png?v=1'},
+    {id: 'marketpliers', image: 'https://cdn.discordapp.com/emojis/853838448644980756.png?v=1'},
+    {id: 'many_f', image: 'https://cdn.discordapp.com/emojis/722972451016933416.png?v=1'},
+    {id: 'lutar', image: 'https://cdn.discordapp.com/emojis/359340779476353045.png?v=1'},
+    {id: 'Lsaac', image: 'https://cdn.discordapp.com/emojis/853837635125641266.png?v=1'},
+    {id: 'leon', image: 'https://cdn.discordapp.com/emojis/519045079315382292.png?v=1'},
+    {id: 'lebatteur', image: 'https://cdn.discordapp.com/emojis/332893479006896130.png?v=1'},
+    {id: 'kirby_sleep', image: 'https://cdn.discordapp.com/emojis/492201843053821982.png?v=1'},
+    {id: 'kip', image: 'https://cdn.discordapp.com/emojis/327682686074355722.png?v=1'},
+    {id: 'killingjoke', image: 'https://cdn.discordapp.com/emojis/854511095976034304.png?v=1'},
+    {id: 'keeby', image: 'https://cdn.discordapp.com/emojis/853838284434440202.png?v=1'},
+    {id: 'horrible', image: 'https://cdn.discordapp.com/emojis/853307161890521139.png?v=1'},
+    {id: 'HOGSLICE2', image: 'https://cdn.discordapp.com/emojis/868385735449923614.png?v=1'},
+    {id: 'HOGSLICE', image: 'https://cdn.discordapp.com/emojis/868385359153754122.png?v=1'},
+    {id: 'hmm', image: 'https://cdn.discordapp.com/emojis/439957385222815744.png?v=1'},
+    {id: 'HELLO', image: 'https://cdn.discordapp.com/emojis/454056700681388035.png?v=1'},
+    {id: 'h_', image: 'https://cdn.discordapp.com/emojis/854511173575376917.png?v=1'},
+    {id: 'goodfriend', image: 'https://cdn.discordapp.com/emojis/439957455770746880.png?v=1'},
+    {id: 'GIANTRAT', image: 'https://cdn.discordapp.com/emojis/853838089397862420.png?v=1'},
+    {id: 'gayknife', image: 'https://cdn.discordapp.com/emojis/700412463090237510.png?v=1'},
+    {id: 'gayaway', image: 'https://cdn.discordapp.com/emojis/335292484592730113.png?v=1'},
+    {id: 'gamerdudes', image: 'https://cdn.discordapp.com/emojis/417525208874876928.png?v=1'},
+    {id: 'frisk_wut', image: 'https://cdn.discordapp.com/emojis/393031431556956160.png?v=1'},
+    {id: 'frens', image: 'https://cdn.discordapp.com/emojis/593314253533085746.png?v=1'},
+    {id: 'fingerguns', image: 'https://cdn.discordapp.com/emojis/327682597616484353.png?v=1'},
+    {id: 'ess', image: 'https://cdn.discordapp.com/emojis/335854360045289474.png?v=1'},
+    {id: 'elsen', image: 'https://cdn.discordapp.com/emojis/332906835944144896.png?v=1'},
+    {id: 'edpog', image: 'https://cdn.discordapp.com/emojis/860420652356075540.png?v=1'},
+    {id: 'EcksDeeKirbee', image: 'https://cdn.discordapp.com/emojis/853834194727862302.png?v=1'},
+    {id: 'crylaugh', image: 'https://cdn.discordapp.com/emojis/700412621198852278.png?v=1'},
+    {id: 'coreetalk', image: 'https://cdn.discordapp.com/emojis/349543344654909440.png?v=1'},
+    {id: 'coree', image: 'https://cdn.discordapp.com/emojis/348581691436040202.png?v=1'},
+    {id: 'coolbugfacts', image: 'https://cdn.discordapp.com/emojis/853837264814604318.png?v=1'},
+    {id: 'clapthink', image: 'https://cdn.discordapp.com/emojis/853835708044148736.png?v=1'},
+    {id: 'calamus_shame', image: 'https://cdn.discordapp.com/emojis/327682555312734219.png?v=1'},
+    {id: 'boyfriendelmo', image: 'https://cdn.discordapp.com/emojis/868389585821007872.png?v=1'},
+    {id: 'bluekirby', image: 'https://cdn.discordapp.com/emojis/329745625841401856.png?v=1'},
+    {id: 'blobsweat', image: 'https://cdn.discordapp.com/emojis/700412540836118559.png?v=1'},
+    {id: 'blobmelt', image: 'https://cdn.discordapp.com/emojis/452521532237938688.png?v=1'},
+    {id: 'blobheart', image: 'https://cdn.discordapp.com/emojis/724081872673439814.png?v=1'},
+    {id: 'biknife', image: 'https://cdn.discordapp.com/emojis/700412576135381103.png?v=1'},
+    {id: 'BEATTODEATHSHELDON', image: 'https://cdn.discordapp.com/emojis/853307835231502336.png?v=1'},
+    {id: 'babyplumdespair', image: 'https://cdn.discordapp.com/emojis/868389528887521360.png?v=1'},
+    {id: 'ascendedthonk', image: 'https://cdn.discordapp.com/emojis/490725350461145098.png?v=1'},
+    {id: 'ariweewee', image: 'https://cdn.discordapp.com/emojis/492896879529558029.png?v=1'},
+    {id: 'andYOUgottahelpus', image: 'https://cdn.discordapp.com/emojis/853837111978885140.png?v=1'},
+    {id: 'alula_gasp', image: 'https://cdn.discordapp.com/emojis/327682525126197249.png?v=1'},
+    {id: 'abha', image: 'https://cdn.discordapp.com/emojis/405074423675092992.png?v=1'}
+];
+
+var myPicker = new picker.Picker({
+    items: items
+});
+
+var pickerUI = new PickerUI(myPicker, {
+    elements: {
+        pick: "#pick",
+        pass: "#pass",
+        undo: "#undo",
+        redo: "#redo",
+        evaluating: "#evaluating",
+        favorites: "#favorites"
+    }
+});
+
+pickerUI.initialize();
+
+/* Sortable favorites - you can safely remove this, and the Sortable.min.js script, if you don't want to be able to sort your favorite list. */
+var sortable = new Sortable(pickerUI.elem.favorites.get(0), {
+    draggable: '.item',
+    animation: 100,
+    onStart: function() {
+        pickerUI.elem.favorites.addClass("sorting");
+    },
+    onEnd: function() {
+        pickerUI.elem.favorites.removeClass("sorting");
+    },
+    onUpdate: function() {
+        myPicker.setFavorites(pickerUI.elem.favorites.children().map(function() {
+            return pickerUI.getItem(this);
+        }).get());
+        pickerUI.update(true);
+    }
+});
+/* End sortable favorites */
+</script>
+</body>
+</html>
